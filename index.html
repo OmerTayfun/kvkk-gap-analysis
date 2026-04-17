@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KVKK Gap Analizi</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#F7F6F2;--surface:#fff;--border:rgba(0,0,0,.1);--border-strong:rgba(0,0,0,.2);
+  --text:#1A1A1A;--muted:#6B6B6B;--faint:#A0A0A0;
+  --green:#1D9E75;--green-bg:#E8F7F2;--green-txt:#0A4A33;
+  --amber:#C68A00;--amber-bg:#FFF8E6;--amber-txt:#5C3D00;
+  --red:#C0392B;--red-bg:#FDEEEC;--red-txt:#6B1A14;
+  --navy:#1A1A2E;--mono:'Courier New',monospace;--sans:Arial,sans-serif;
+}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14px;line-height:1.5}
+
+/* HEADER */
+.header{background:var(--navy);color:#fff;padding:2rem 2rem 1.5rem}
+.header-inner{max-width:1100px;margin:0 auto}
+.header-tag{font-family:var(--mono);font-size:11px;color:rgba(255,255,255,.45);letter-spacing:.1em;text-transform:uppercase;margin-bottom:.5rem}
+.header h1{font-size:26px;font-weight:700;letter-spacing:-.01em;margin-bottom:.3rem}
+.header-sub{font-size:12px;color:rgba(255,255,255,.5)}
+
+/* SKOR BAR */
+.skor-bar{background:#fff;border-bottom:1px solid var(--border);padding:1rem 2rem;position:sticky;top:0;z-index:100}
+.skor-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap}
+.skor-sayi{font-family:var(--mono);font-size:26px;font-weight:700;min-width:58px}
+.skor-detay{flex:1;min-width:180px}
+.skor-seviye{font-size:12px;font-weight:600;margin-bottom:5px}
+.prog-track{height:4px;background:#EBEBEB;border-radius:2px;overflow:hidden}
+.prog-fill{height:100%;border-radius:2px;transition:width .4s}
+.sayaclar{display:flex;gap:14px;flex-wrap:wrap}
+.sayac{font-size:11px;display:flex;align-items:center;gap:4px;color:var(--muted)}
+.sdot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.filtre-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.fbtn{padding:4px 12px;border:1px solid var(--border-strong);border-radius:20px;font-size:11px;cursor:pointer;background:transparent;color:var(--muted);font-family:var(--sans)}
+.fbtn.aktif{background:var(--navy);border-color:var(--navy);color:#fff}
+
+/* MAIN */
+.main{max-width:1100px;margin:0 auto;padding:1.5rem 2rem}
+
+/* KATEGORİ */
+.kategori{margin-bottom:2rem}
+.kat-header{display:flex;align-items:center;gap:10px;margin-bottom:.75rem;padding-bottom:.6rem;border-bottom:1px solid var(--border)}
+.kat-no{font-family:var(--mono);font-size:10px;color:var(--faint);min-width:22px}
+.kat-baslik{font-size:13px;font-weight:700;flex:1}
+.kat-kaynak{font-family:var(--mono);font-size:10px;color:var(--faint);border:1px solid var(--border);padding:2px 7px;border-radius:3px}
+.kat-skor{font-family:var(--mono);font-size:11px;color:var(--faint)}
+
+/* TABLO */
+.tablo-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:8px}
+table{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
+colgroup col:nth-child(1){width:44px}
+colgroup col:nth-child(2){width:280px}
+colgroup col:nth-child(3){width:110px}
+colgroup col:nth-child(4){width:220px}
+colgroup col:nth-child(5){width:180px}
+colgroup col:nth-child(6){width:110px}
+colgroup col:nth-child(7){width:100px}
+th{background:#2D2D2D;color:#fff;font-size:10px;font-weight:600;padding:8px 10px;text-align:left;border-right:1px solid rgba(255,255,255,.1)}
+th:last-child{border-right:none}
+td{padding:8px 10px;border-bottom:1px solid var(--border);border-right:1px solid var(--border);vertical-align:top;line-height:1.4}
+td:last-child{border-right:none}
+tr:last-child td{border-bottom:none}
+.row-evet td{background:var(--green-bg)}
+.row-kismen td{background:var(--amber-bg)}
+.row-hayir td{background:var(--red-bg)}
+.row-uygulanamaz td{background:#F5F5F0}
+.pill{display:inline-block;font-size:10px;padding:2px 9px;border-radius:20px;font-weight:600;white-space:nowrap}
+.p-evet{background:var(--green);color:#fff}
+.p-kismen{background:var(--amber);color:#fff}
+.p-hayir{background:var(--red);color:#fff}
+.p-na{background:#888;color:#fff}
+.no-cell{font-family:var(--mono);font-size:10px;color:var(--faint);text-align:center}
+.bulgu-cell{font-size:11px;color:var(--muted);line-height:1.45}
+.bulgu-cell.evet{color:var(--green-txt)}
+.bulgu-cell.kismen{color:var(--amber-txt)}
+.bulgu-cell.hayir{color:var(--red-txt)}
+.sorumlu{font-size:11px;color:var(--muted)}
+.termin{font-size:11px;font-family:var(--mono);color:var(--muted)}
+
+/* FOOTER */
+.footer{max-width:1100px;margin:0 auto;padding:1.5rem 2rem;border-top:1px solid var(--border);font-size:11px;color:var(--faint);font-family:var(--mono)}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-inner">
+    <p class="header-tag">KVK Kurulu Resmi Rehberlerine Dayalı · 139 Soru · 8 Kategori · Örnek Denetim Raporu</p>
+    <h1>KVKK Gap Analizi Aracı</h1>
+    <p class="header-sub">Kurum: ABC Teknoloji A.Ş. &nbsp;·&nbsp; Denetçi: GRC Uzmanı &nbsp;·&nbsp; Denetim Tarihi: Nisan 2025</p>
+  </div>
+</div>
+
+<div class="skor-bar">
+  <div class="skor-inner">
+    <div class="skor-sayi" id="skor-sayi">—%</div>
+    <div class="skor-detay">
+      <div class="skor-seviye" id="skor-seviye">Yükleniyor...</div>
+      <div class="prog-track"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+    </div>
+    <div>
+      <div class="sayaclar">
+        <div class="sayac"><div class="sdot" style="background:var(--green)"></div><span id="c-evet">0 uyumlu</span></div>
+        <div class="sayac"><div class="sdot" style="background:var(--amber)"></div><span id="c-kismen">0 kısmen</span></div>
+        <div class="sayac"><div class="sdot" style="background:var(--red)"></div><span id="c-hayir">0 uyumsuz</span></div>
+        <div class="sayac"><div class="sdot" style="background:#888"></div><span id="c-na">0 uygulanamaz</span></div>
+      </div>
+      <div class="filtre-row">
+        <button class="fbtn aktif" onclick="filtrele('hepsi',this)">Tümü</button>
+        <button class="fbtn" onclick="filtrele('Evet',this)">Evet</button>
+        <button class="fbtn" onclick="filtrele('Kısmen',this)">Kısmen</button>
+        <button class="fbtn" onclick="filtrele('Hayır',this)">Hayır</button>
+        <button class="fbtn" onclick="filtrele('Uygulanamaz',this)">Uygulanamaz</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="main" id="main"></div>
+
+<div class="footer">
+  Kaynak: KVK Kurulu Resmi Rehberleri (2017–2025) · kvkk.gov.tr · Bu araç eğitim ve portfolyo amaçlıdır.
+</div>
+
+<script>
+const veri = [
+  {
+    kategori: "1. Temel İlkeler ve Hukuki Dayanak",
+    kaynak: "Uygulama Rehberi",
+    sorular: [
+      {soru:"Kişisel verilerin hukuka ve dürüstlük kurallarına uygun işlendiği belgelenmiş mi?", yanit:"Evet", bulgu:"Veri işleme politikası 2024/01 revizyonuyla güncellenmiş, hukuk birimi onayı mevcut.", sorumlu:"Hukuk Müdürü", termin:"—"},
+      {soru:"Kişisel veriler belirli, açık ve meşru amaçlarla mı işleniyor?", yanit:"Evet", bulgu:"Her veri işleme faaliyeti için amaç belgesi hazırlanmış ve onaylanmış.", sorumlu:"KVKK Sorumlusu", termin:"—"},
+      {soru:"İşlenen veri, amacın gerektirdiğiyle sınırlı ve orantılı mı?", yanit:"Kısmen", bulgu:"Pazarlama sürecinde ihtiyaç fazlası doğum tarihi ve adres bilgisi toplanmakta; bu alanlar gözden geçirilmeli.", sorumlu:"Pazarlama Müdürü", termin:"Haz 2025"},
+      {soru:"Kişisel veriler doğru ve güncel tutuluyor mu?", yanit:"Evet", bulgu:"Müşteri portalında güncelleme imkânı mevcut; yıllık veri doğrulama kampanyası yürütülüyor.", sorumlu:"IT Müdürü", termin:"—"},
+      {soru:"Kişisel veriler saklama süresi sonunda siliniyor veya anonim hale getiriliyor mu?", yanit:"Hayır", bulgu:"BULGU: İmha takvimi tanımlı değil; eski müşteri verileri belirsiz süreyle sistemde tutulmakta.", sorumlu:"IT Müdürü", termin:"May 2025"},
+      {soru:"Her veri işleme faaliyeti için hukuki dayanak belirlenmiş mi?", yanit:"Kısmen", bulgu:"CRM ve finans modüllerinde dayanak tanımlı; İK modülünde henüz tamamlanmamış.", sorumlu:"KVKK Sorumlusu", termin:"May 2025"},
+      {soru:"Kanunlarda açıkça öngörülen veri işleme süreçleri belgeli mi?", yanit:"Evet", bulgu:"Vergi ve SGK yükümlülükleri kapsamındaki işlemeler yasal dayanak gösterilerek belgelenmiş.", sorumlu:"Hukuk Müdürü", termin:"—"},
+      {soru:"Sözleşmenin ifası için zorunlu veri işleme kapsamı tanımlanmış mı?", yanit:"Evet", bulgu:"Müşteri sözleşmelerinde zorunlu veri kapsamı ayrıca belirtilmiş.", sorumlu:"Hukuk Müdürü", termin:"—"},
+      {soru:"Meşru menfaate dayanan işlemeler ilgili kişi hakları dengelenerek yapılıyor mu?", yanit:"Hayır", bulgu:"BULGU: Meşru menfaat dengeleme testi hiç yapılmamış; bu dayanağa başvurulan süreçler gözden geçirilmeli.", sorumlu:"Hukuk Müdürü", termin:"Haz 2025"},
+      {soru:"Veri sorumlusu kimliği ve iletişim bilgileri tanımlanmış mı?", yanit:"Evet", bulgu:"Web sitesinde ve aydınlatma metninde veri sorumlusu bilgileri yer alıyor.", sorumlu:"KVKK Sorumlusu", termin:"—"},
+      {soru:"Kişisel veri işleme envanteri (VERBİS kaydı) güncel tutuluyor mu?", yanit:"Kısmen", bulgu:"VERBİS kaydı mevcut ancak son 8 aydır güncellenmemiş; yeni eklenen bulut hizmetleri eksik.", sorumlu:"KVKK Sorumlusu", termin:"May 2025"},
+      {soru:"Veri işleme faaliyetleri periyodik olarak gözden geçiriliyor mu?", yanit:"Hayır", bulgu:"BULGU: Periyodik gözden geçirme mekanizması kurulmamış; son inceleme tarihi bilinmiyor.", sorumlu:"KVKK Sorumlusu", termin:"Haz 2025"},
+      {soru:"Veri minimizasyonu ilkesi uygulanıyor mu?", yanit:"Kısmen", bulgu:"Mobil uygulama kayıt formunda konum verisi zorunlu alan olarak işaretli; hizmet için gereksiz.", sorumlu:"Ürün Müdürü", termin:"May 2025"},
+      {soru:"Kişisel veri kategorileri (genel / özel nitelikli) ayrıştırılmış mı?", yanit:"Evet", bulgu:"Envanterde genel ve özel nitelikli veri kategorileri ayrı tablolarda listelenmiş.", sorumlu:"KVKK Sorumlusu", termin:"—"},
+      {soru:"Kişisel veri işleme politikası yazılı olarak mevcut ve yayımlanmış mı?", yanit:"Evet", bulgu:"Web sitesinde yayımlanmış; son revizyon tarihi Ocak 2025.", sorumlu:"Hukuk Müdürü", termin:"—"},
+    ]
+  },
+  {
+    kategori: "2. Aydınlatma Yükümlülüğü",
+    kaynak: "Aydınlatma Rehberi",
+    sorular: [
+      {soru:"Veri toplandığı anda ilgili kişiye aydınlatma yapılıyor mu?", yanit:"Evet", bulgu:"Tüm veri toplama noktalarında (web formu, mobil uygulama, çağrı merkezi) aydınlatma akışı kurulu.", sorumlu:"KVKK Sorumlusu", termin:"—"},
+      {soru:"Aydınlatma metninde veri sorumlusunun kimliği belirtiliyor mu?", yanit:"Evet", bulgu:"Ticaret unvanı, adres ve iletişim bilgileri metnin ilk bölümünde yer alıyor.", sorumlu:"Hukuk Müdürü", termin:"—"},
+      {soru:"Kişisel verilerin işlenme amacı aydınlatma metninde açıkça yer alıyor mu?", yanit:"Evet", bulgu:"Amaçlar madde madde sıralanmış; pazarlama amacı ayrıca belirtilmiş.", sorumlu:"Hukuk Müdürü", termin:"—"},
+      {soru:"Verilerin kimlere ve hangi amaçla aktarılabileceği belirtiliyor mu?", yanit:"Kısmen", bulgu:"Yurt içi aktarımlar belirtilmiş; ancak bulut hizmet sağlayıcısına yurt dışı aktarım metinde yer almıyor.", sorumlu:"Hukuk Müdürü", termin:"May 2025"},
+      {soru:"Veri toplamanın yöntemi ve hukuki sebebi açıklanıyor mu?", yanit:"Evet", bulgu:"Elektronik, fiziksel ve sözlü toplama yöntemleri ile hukuki dayanak belirtilmiş.", sorumlu:"Hukuk Müdürü", termin:"—"},
+      {soru:"İlgili kişinin hakları aydınlatma metninde sayılıyor mu?", yanit:"Evet", bulgu:"11. madde kapsamındaki tüm haklar aydınlatma metninin sonunda listelenmiş.", sorumlu:"Hukuk Müdürü", termin:"—"},
+      {soru:"Aydınlatma metni sade, anlaşılır dilde mi yazılmış?", yanit:"Kısmen", bulgu:"Hukuki terimler sıklıkla kullanılmakta; son kullanıcı araştırmasında anlaşılırlık skoru düşük çıkmış.", sorumlu:"Hukuk Müdürü", termin:"Haz 2025"},
+      {soru:"Farklı kanallar için ayrı aydınlatma metinleri var mı?", yanit:"Evet", bulgu:"Web, mobil ve çağrı merkezi için ayrı aydınlatma metinleri hazırlanmış.", sorumlu:"KVKK Sorumlusu", termin:"—"},
+      {soru:"Çevrimiçi platformlarda aydınlatma metni kolayca erişilebilir mi?", yanit:"Evet", bulgu:"Web sitesi footer bölümünde ve kayıt formunda doğrudan bağlantı mevcut.", sorumlu:"IT Müdürü", termin:"—"},
+      {soru:"Telefon ile veri toplamada sözlü aydınlatma yapılıyor mu?", yanit:"Kısmen", bulgu:"Çağrı merkezi senaryosunda aydınlatma betiği mevcut; ancak uyum takibi yapılmıyor, kayıt incelenmedi.", sorumlu:"Çağrı Merkezi Müdürü", termin:"May 2025"},
+      {soru:"Çalışanlar işe alım sürecinde aydınlatılıyor mu?", yanit:"Evet", bulgu:"İşe alım paketi içinde çalışan aydınlatma metni yer alıyor; imza kaydı tutuluyor.", sorumlu:"İK Müdürü", termin:"—"},
+      {soru:"Aydınlatma yükümlülüğünün yerine getirildiğine dair kayıt tutuluyor mu?", yanit:"Hayır", bulgu:"BULGU: Web ve mobil kanal için aydınlatma gösterim logu tutulmuyor; ispat imkânı yok.", sorumlu:"IT Müdürü", termin:"May 2025"},
+      {soru:"Aydınlatma metinleri mevzuat değişikliklerine göre güncelleniyor mu?", yanit:"Evet", bulgu:"2024 KVKK reform değişikliklerine göre metin Eylül 2024'te güncellenmiş.", sorumlu:"Hukuk Müdürü", termin:"—"},
+      {soru:"Çocuklara yönelik veri toplama süreçlerinde özel aydınlatma yapılıyor mu?", yanit:"Uygulanamaz", bulgu:"Hizmet 18+ kullanıcılara yönelik; çocuk verisi işlenmiyor.", sorumlu:"—", termin:"—"},
+      {soru:"Üçüncü kişilerden veri alındığında da aydınlatma yükümlülüğü yerine getiriliyor mu?", yanit:"Hayır", bulgu:"BULGU: İş ortağı referansıyla gelen potansiyel müşteri verilerinde aydınlatma yapılmıyor.", sorumlu:"Pazarlama Müdürü", termin:"Haz 2025"},
+      {soru:"Aydınlatma ile açık rıza talepleri birbirinden açıkça ayrıştırılmış mı?", yanit:"Evet", bulgu:"Form tasarımında aydınlatma metni ve rıza onay kutusu görsel olarak ayrılmış.", sorumlu:"Ürün Müdürü", termin:"—"},
+      {soru:"Kamera/ses kaydı gibi durumlarda görsel/işitsel aydınlatma yapılıyor mu?", yanit:"Evet", bulgu:"Ofis girişinde kamera uyarı levhası ve çağrı merkezi ses kaydı uyarısı mevcut.", sorumlu:"Operasyon Müdürü", termin:"—"},
+      {soru:"Web sitesi çerez aydınlatması güncel ve KVKK'ya uygun mu?", yanit:"Kısmen", bulgu:"Çerez aydınlatması mevcut; ancak analitik çerezler zorunlu olarak işaretlenmiş, bu hata.", sorumlu:"IT Müdürü", termin:"May 2025"},
+      {soru:"Aydınlatma metni çok katmanlı yapıda sunuluyor mu?", yanit:"Hayır", bulgu:"BULGU: Tek uzun metin sunuluyor; özet + detay katmanlı yapı uygulanmıyor.", sorumlu:"Hukuk Müdürü", termin:"Haz 2025"},
+      {soru:"Aydınlatma metninin dili hedef kitlenin anlayabileceği düzeyde mi?", yanit:"Kısmen", bulgu:"B2B müşterilere yönelik metin teknik; B2C segment için sadeleştirilmiş versiyon hazırlanmalı.", sorumlu:"Hukuk Müdürü", termin:"Haz 2025"},
+    ]
+  },
+  {
+    kategori: "3. Açık Rıza Yönetimi",
+    kaynak: "Uygulama Rehberi",
+    sorular: [
+      {soru:"Açık rıza gerektiren veri işleme faaliyetleri tespit edilmiş mi?", yanit:"Evet", bulgu:"Pazarlama iletişimi ve profilleme için rıza gereken süreçler listelenmiş.", sorumlu:"KVKK Sorumlusu", termin:"—"},
+      {soru:"Rızalar özgür iradeyle, bilgilendirme sonrası alınıyor mu?", yanit:"Evet", bulgu:"Rıza kutusu aydınlatma metninden sonra, ayrı ve boş olarak sunuluyor.", sorumlu:"Ürün Müdürü", termin:"—"},
+      {soru:"Önceden işaretlenmiş onay kutuları (opt-out) kullanılmıyor mu?", yanit:"Evet", bulgu:"Tüm rıza kutucukları boş geliyor; kullanıcı aktif olarak seçim yapıyor.", sorumlu:"Ürün Müdürü", termin:"—"},
+      {soru:"Rıza reddi veya geri alımı hizmet sunumuna engel teşkil etmiyor mu?", yanit:"Kısmen", bulgu:"Pazarlama rızası reddi servis erişimini engellemese de rıza geri alma sonrası hesap kısıtlaması gözlemlendi.", sorumlu:"Ürün Müdürü", termin:"May 2025"},
+      {soru:"Açık rızalar kayıt altına alınarak saklanıyor mu?", yanit:"Evet", bulgu:"Rıza zaman damgası ve IP adresiyle birlikte veri tabanında saklanıyor.", sorumlu:"IT Müdürü", termin:"—"},
+      {soru:"Rıza geri alımı için erişilebilir bir mekanizma var mı?", yanit:"Evet", bulgu:"Hesap ayarları ve e-posta abonelik iptali üzerinden rıza geri alınabiliyor.", sorumlu:"Ürün Müdürü", termin:"—"},
+      {soru:"Rıza geri alındığında ilgili veri işleme faaliyeti durduruluyor mu?", yanit:"Kısmen", bulgu:"E-posta kanalı anında durduruluyor; SMS kanalının durması 3-5 gün sürmekte.", sorumlu:"IT Müdürü", termin:"May 2025"},
+      {soru:"Çalışanlardan alınan rızalarda bağımlılık ilişkisi gözetiliyor mu?", yanit:"Hayır", bulgu:"BULGU: Çalışan rızalarının tamamı açık rıza dayanağına oturtulmuş; bağımlılık ilişkisi gözetilmemiş.", sorumlu:"İK Müdürü", termin:"Haz 2025"},
+      {soru:"Çocuklara ait veriler için veli/vasi rızası alınıyor mu?", yanit:"Uygulanamaz", bulgu:"Hizmet 18+ kullanıcılara yönelik.", sorumlu:"—", termin:"—"},
+      {soru:"Rıza formları net ve yanıltıcı olmayan bir dille hazırlanmış mı?", yanit:"Evet", bulgu:"Hukuk ve UX ekibinin ortak incelemesinden geçmiş; kullanıcı testi yapılmış.", sorumlu:"Hukuk Müdürü", termin:"—"},
+      {soru:"Birden fazla işleme amacı için ayrı rıza seçenekleri sunuluyor mu?", yanit:"Evet", bulgu:"E-posta, SMS ve profilleme için üç ayrı onay kutusu yer alıyor.", sorumlu:"Ürün Müdürü", termin:"—"},
+      {soru:"Pazarlama rızaları diğer rızalardan bağımsız olarak alınıyor mu?", yanit:"Evet", bulgu:"Pazarlama rızası ayrı bölümde sunuluyor; zorunlu sözleşme rızasıyla birleştirilmemiş.", sorumlu:"Ürün Müdürü", termin:"—"},
+      {soru:"Rızaların geçerliliği periyodik olarak gözden geçiriliyor mu?", yanit:"Hayır", bulgu:"BULGU: Rıza tazeleme mekanizması yok; 3 yıl önce alınmış rızalar hâlâ aktif kullanılmakta.", sorumlu:"KVKK Sorumlusu", termin:"Haz 2025"},
+      {soru:"Rıza formlarında 'kabul etmiyorum' seçeneği eşdeğer biçimde sunuluyor mu?", yanit:"Evet", bulgu:"Onay ve ret seçenekleri aynı görsel ağırlıkta tasarlanmış.", sorumlu:"Ürün Müdürü", termin:"—"},
+      {soru:"Rıza süreçleri yazılı prosedüre bağlanmış mı?", yanit:"Evet", bulgu:"Rıza Yönetimi Prosedürü (v2.1) hazırlanmış ve onaylanmış.", sorumlu:"KVKK Sorumlusu", termin:"—"},
+    ]
+  },
+  {
+    kategori: "4. Teknik Güvenlik Tedbirleri",
+    kaynak: "Veri Güvenliği Rehberi",
+    sorular: [
+      {soru:"Kişisel veri içeren sistemlere erişim yetkilendirme ile kontrol ediliyor mu?", yanit:"Evet", bulgu:"Role Based Access Control (RBAC) uygulanıyor; erişim yetki matrisi güncel.", sorumlu:"IT Güvenlik", termin:"—"},
+      {soru:"Kullanıcı hesapları için güçlü parola politikası uygulanıyor mu?", yanit:"Evet", bulgu:"Min. 12 karakter, büyük/küçük harf, rakam ve sembol zorunlu; 90 günde değişim.", sorumlu:"IT Güvenlik", termin:"—"},
+      {soru:"Çok faktörlü kimlik doğrulama (MFA) kritik sistemlerde aktif mi?", yanit:"Kısmen", bulgu:"CRM ve finans sistemlerinde MFA aktif; e-posta ve İK sistemlerinde henüz uygulanmamış.", sorumlu:"IT Güvenlik", termin:"May 2025"},
+      {soru:"Kişisel veriler depolanırken şifreleniyor mu?", yanit:"Evet", bulgu:"AES-256 şifreleme uygulanıyor; şifreleme anahtarları ayrı kasada saklanıyor.", sorumlu:"IT Güvenlik", termin:"—"},
+      {soru:"Kişisel veriler iletim sırasında şifreleniyor mu (TLS/SSL)?", yanit:"Evet", bulgu:"Tüm API ve web bağlantıları TLS 1.3 ile güvence altında.", sorumlu:"IT Güvenlik", termin:"—"},
+      {soru:"Firewall ve ağ segmentasyonu uygulanıyor mu?", yanit:"Evet", bulgu:"DMZ, iç ağ ve veri tabanı katmanları ayrı segmentlerde; next-gen firewall aktif.", sorumlu:"IT Altyapı", termin:"—"},
+      {soru:"Saldırı tespit/önleme sistemleri (IDS/IPS) aktif mi?", yanit:"Evet", bulgu:"Ağ tabanlı IDS/IPS çalışıyor; günlük imza güncellemesi yapılıyor.", sorumlu:"IT Güvenlik", termin:"—"},
+      {soru:"Erişim logları (audit log) tutuluyor ve belirli süre saklanıyor mu?", yanit:"Kısmen", bulgu:"Uygulama logları 90 gün saklanıyor; yasal gereklilik 2 yıl. Saklama süresi yetersiz.", sorumlu:"IT Güvenlik", termin:"May 2025"},
+      {soru:"Log kayıtları düzenli olarak inceleniyor mu?", yanit:"Hayır", bulgu:"BULGU: Log incelemesi otomatik alarm dışında manuel olarak yapılmıyor; anormal erişimler gözden kaçabiliyor.", sorumlu:"IT Güvenlik", termin:"Haz 2025"},
+      {soru:"Zararlı yazılım koruma sistemleri güncel tutuluyor mu?", yanit:"Evet", bulgu:"EDR çözümü tüm uç noktalara kurulu; otomatik güncelleme aktif.", sorumlu:"IT Güvenlik", termin:"—"},
+      {soru:"Güvenlik yamaları zamanında uygulanıyor mu?", yanit:"Kısmen", bulgu:"Kritik yamalar 72 saatte uygulanıyor; orta seviye yamalar gecikmeyle uygulandığı görülüyor.", sorumlu:"IT Altyapı", termin:"May 2025"},
+      {soru:"Sızma testleri periyodik olarak gerçekleştiriliyor mu?", yanit:"Evet", bulgu:"Yılda iki kez bağımsız firma tarafından sızma testi yapılıyor; son rapor Şubat 2025.", sorumlu:"IT Güvenlik", termin:"—"},
+      {soru:"Güvenlik açığı yönetimi süreci tanımlanmış mı?", yanit:"Evet", bulgu:"Vulnerability Management Policy dokümanı mevcut; CVSS skoru 7+ için 24 saat SLA.", sorumlu:"IT Güvenlik", termin:"—"},
+      {soru:"Veri kaybı önleme (DLP) çözümü kullanılıyor mu?", yanit:"Hayır", bulgu:"BULGU: DLP çözümü bulunmuyor; kişisel veri içeren dosyaların dış ortama çıkışı kontrol edilemiyor.", sorumlu:"IT Güvenlik", termin:"Tem 2025"},
+      {soru:"Taşınabilir medya (USB vb.) kullanımı politikayla kontrol altına alınmış mı?", yanit:"Evet", bulgu:"USB portları politika gereği kilitli; sadece onaylı cihazlar kullanılabiliyor.", sorumlu:"IT Güvenlik", termin:"—"},
+      {soru:"Uzaktan erişim güvenli VPN üzerinden sağlanıyor mu?", yanit:"Evet", bulgu:"Zero-trust VPN çözümü kullanılıyor; cihaz uyumluluk kontrolü aktif.", sorumlu:"IT Altyapı", termin:"—"},
+      {soru:"Bulut ortamlarında veri güvenliği kontrolleri uygulanıyor mu?", yanit:"Kısmen", bulgu:"AWS ortamında güvenlik grupları yapılandırılmış; ancak CSPM aracı henüz devreye alınmamış.", sorumlu:"IT Güvenlik", termin:"Haz 2025"},
+      {soru:"Yazılım geliştirmede güvenli kodlama prensipleri benimseniyor mu?", yanit:"Kısmen", bulgu:"OWASP Top 10 eğitimi verilmiş; ancak SAST/DAST araçları CI/CD sürecine entegre edilmemiş.", sorumlu:"Geliştirme Müdürü", termin:"Haz 2025"},
+      {soru:"Veri tabanlarına erişim en az yetki prensibine göre yapılandırılmış mı?", yanit:"Evet", bulgu:"Her uygulama için ayrı DB kullanıcısı tanımlı; genel admin hesabı kaldırılmış.", sorumlu:"IT Altyapı", termin:"—"},
+      {soru:"Yedekleme verileri de şifrelenerek saklanıyor mu?", yanit:"Evet", bulgu:"Yedekler şifreli olarak farklı bölgede saklanıyor; restore testi çeyrek yılda yapılıyor.", sorumlu:"IT Altyapı", termin:"—"},
+      {soru:"Sistem bileşenlerinin envanteri güncel tutuluyor mu?", yanit:"Kısmen", bulgu:"Sunucu envanteri güncel; ancak mobil cihaz ve IoT bileşenleri envantere dahil edilmemiş.", sorumlu:"IT Altyapı", termin:"May 2025"},
+      {soru:"Siber güvenlik olay müdahale planı tanımlanmış mı?", yanit:"Evet", bulgu:"Incident Response Plan v3.0 onaylı; yılda bir masa başı tatbikatı yapılıyor.", sorumlu:"IT Güvenlik", termin:"—"},
+      {soru:"Güvenlik izleme ve alarm sistemi (SIEM) aktif mi?", yanit:"Evet", bulgu:"SIEM çözümü 7/24 izleme yapıyor; kritik alarmlar güvenlik ekibine anında iletiliyor.", sorumlu:"IT Güvenlik", termin:"—"},
+      {soru:"Web uygulamaları WAF ile korunuyor mu?", yanit:"Evet", bulgu:"Bulut tabanlı WAF tüm dış yüz uygulamaların önünde konumlandırılmış.", sorumlu:"IT Güvenlik", termin:"—"},
+      {soru:"Kişisel veri içeren sistemlerin yedekliliği sağlanmış mı?", yanit:"Evet", bulgu:"Kritik sistemler aktif-aktif yapıda; RTO 4 saat, RPO 1 saat olarak tanımlı.", sorumlu:"IT Altyapı", termin:"—"},
+    ]
+  },
+  {
+    kategori: "5. İdari Tedbirler ve Farkındalık",
+    kaynak: "Veri Güvenliği Rehberi",
+    sorular: [
+      {soru:"KVKK uyumundan sorumlu bir kişi/birim atanmış mı?", yanit:"Evet", bulgu:"KVKK Sorumlusu atanmış; görev tanımı ve yetkileri iç yönetmelikte belirlenmiş.", sorumlu:"Genel Müdür", termin:"—"},
+      {soru:"Tüm çalışanlara KVKK farkındalık eğitimi verilmiş mi?", yanit:"Evet", bulgu:"Tüm çalışanlara işe başlangıçta zorunlu KVKK e-öğrenimi tamamlatılıyor.", sorumlu:"İK Müdürü", termin:"—"},
+      {soru:"KVKK eğitimleri periyodik olarak tekrarlanıyor mu?", yanit:"Kısmen", bulgu:"İşe giriş eğitimi var; ancak yıllık tazeleme eğitimi henüz programlanmamış.", sorumlu:"İK Müdürü", termin:"Haz 2025"},
+      {soru:"Eğitim katılımları kayıt altına alınıyor mu?", yanit:"Evet", bulgu:"LMS sistemi üzerinden tamamlama ve sınav sonuçları kayıt altında.", sorumlu:"İK Müdürü", termin:"—"},
+      {soru:"Kişisel veri güvenliği politikası tüm çalışanlara duyurulmuş mu?", yanit:"Evet", bulgu:"İntranet ve işe giriş paketi aracılığıyla tüm çalışanlara iletilmiş; imza alınmış.", sorumlu:"İK Müdürü", termin:"—"},
+      {soru:"Çalışanlarla gizlilik taahhütnamesi imzalanmış mı?", yanit:"Evet", bulgu:"Tüm çalışanların özlük dosyasında imzalı gizlilik taahhütnamesi mevcut.", sorumlu:"İK Müdürü", termin:"—"},
+      {soru:"İşe alım sürecinde KVKK kapsamında çalışan bilgilendirmesi yapılıyor mu?", yanit:"Evet", bulgu:"İşe alım paketinde çalışan aydınlatma metni yer alıyor.", sorumlu:"İK Müdürü", termin:"—"},
+      {soru:"İşten ayrılan çalışanların erişim yetkileri derhal kaldırılıyor mu?", yanit:"Kısmen", bulgu:"İK bildirimi sonrası IT hesap kapatıyor; ancak bildirim ile kapatma arasında ortalama 2 gün gecikmesi var.", sorumlu:"IT Müdürü", termin:"May 2025"},
+      {soru:"Görev değişikliğinde erişim yetkileri güncelleniyor mu?", yanit:"Hayır", bulgu:"BULGU: Görev değişikliği sonrası eski yetkilerin kaldırılması için otomatik süreç yok; birikmiş yetkiler tespit edildi.", sorumlu:"IT Müdürü", termin:"May 2025"},
+      {soru:"Kişisel veriye erişim yetki matrisi oluşturulmuş ve güncel mi?", yanit:"Evet", bulgu:"Departman bazlı yetki matrisi mevcut; altı ayda bir gözden geçiriliyor.", sorumlu:"IT Güvenlik", termin:"—"},
+      {soru:"Yöneticilere özel veri koruma sorumluluğu eğitimi verilmiş mi?", yanit:"Hayır", bulgu:"BULGU: Üst ve orta kademe yöneticilere özel KVKK eğitimi düzenlenmemiş.", sorumlu:"İK Müdürü", termin:"Haz 2025"},
+      {soru:"Disiplin sürecinde kişisel veri ihlali yaptırımları tanımlanmış mı?", yanit:"Evet", bulgu:"Disiplin yönetmeliğinde kişisel veri ihlali yaptırım kategorisi oluşturulmuş.", sorumlu:"İK Müdürü", termin:"—"},
+      {soru:"Bilgi güvenliği politikası üst yönetim tarafından onaylanmış mı?", yanit:"Evet", bulgu:"Genel Müdür imzalı; her yıl gözden geçiriliyor.", sorumlu:"Genel Müdür", termin:"—"},
+      {soru:"Fiziksel güvenlik önlemleri alınmış mı? (kilitli alan, kamera, ziyaretçi kaydı)", yanit:"Evet", bulgu:"Kart okuyucu giriş sistemi, CCTV ve ziyaretçi kayıt defteri mevcut.", sorumlu:"Operasyon Müdürü", termin:"—"},
+      {soru:"Fiziksel ortamdaki kişisel veri içeren belgeler kilitli dolaplarda saklanıyor mu?", yanit:"Kısmen", bulgu:"Arşiv odası kilitli; ancak departman içi çalışma alanlarında açık bırakılan dosyalar gözlemlendi.", sorumlu:"Operasyon Müdürü", termin:"May 2025"},
+      {soru:"Çalışanların kişisel veri içeren dokümanları güvenli şekilde imha etmesi sağlanıyor mu?", yanit:"Evet", bulgu:"Her katta evrak imha makinesi mevcut; imha politikası çalışanlara bildirilmiş.", sorumlu:"Operasyon Müdürü", termin:"—"},
+      {soru:"Temiz masa / temiz ekran politikası uygulanıyor mu?", yanit:"Kısmen", bulgu:"Politika belgede mevcut; ancak denetim sırasında birden fazla alanda ihlal gözlemlendi.", sorumlu:"İK Müdürü", termin:"May 2025"},
+      {soru:"Paylaşımlı alanlarda kişisel veri güvenliği gözetiliyor mu?", yanit:"Evet", bulgu:"Toplantı odası ekranları kullanım sonrası otomatik kapanıyor; misafir Wi-Fi ayrı ağda.", sorumlu:"IT Altyapı", termin:"—"},
+      {soru:"Evden çalışma durumunda veri güvenliği prosedürü var mı?", yanit:"Evet", bulgu:"Remote Work Güvenlik Rehberi yayımlanmış; VPN zorunlu kullanımı politikayla destekleniyor.", sorumlu:"IT Güvenlik", termin:"—"},
+      {soru:"Kişisel veri ihlali bildirim prosedürü çalışanlara duyurulmuş mu?", yanit:"Evet", bulgu:"İhlal bildirim süreci intranet'te yayımlanmış; KVKK Sorumlusunun iletişim bilgisi her çalışana gönderilmiş.", sorumlu:"KVKK Sorumlusu", termin:"—"},
+    ]
+  },
+  {
+    kategori: "6. Saklama, İmha ve Envanter",
+    kaynak: "Saklama ve İmha Rehberi",
+    sorular: [
+      {soru:"Her veri kategorisi için saklama süresi belirlenmiş mi?", yanit:"Kısmen", bulgu:"Müşteri ve finans verileri için süreler tanımlı; pazarlama ve operasyon verileri için henüz belirlenmemiş.", sorumlu:"KVKK Sorumlusu", termin:"May 2025"},
+      {soru:"Saklama süreleri yasal yükümlülüklerle uyumlu mu?", yanit:"Evet", bulgu:"Muhasebe kayıtları için 10 yıl, sözleşme verileri için 5 yıl; Vergi Usul Kanunu ile uyumlu.", sorumlu:"Hukuk Müdürü", termin:"—"},
+      {soru:"Saklama süresi dolan veriler sistematik olarak imha ediliyor mu?", yanit:"Hayır", bulgu:"BULGU: Otomatik imha mekanizması yok; süresi dolan veriler sistemde tutulmaya devam ediyor.", sorumlu:"IT Müdürü", termin:"Haz 2025"},
+      {soru:"Kişisel veri saklama ve imha politikası yazılı olarak mevcut mu?", yanit:"Kısmen", bulgu:"Taslak politika mevcut ancak üst yönetim onayı alınmamış.", sorumlu:"KVKK Sorumlusu", termin:"May 2025"},
+      {soru:"Silme, yok etme ve anonim hale getirme yöntemleri ayrı ayrı tanımlanmış mı?", yanit:"Hayır", bulgu:"BULGU: Üç yöntem arasındaki fark belgede tanımlanmamış; uygulayıcılar hangi durumda ne yapacağını bilmiyor.", sorumlu:"KVKK Sorumlusu", termin:"Haz 2025"},
+      {soru:"Elektronik ortamdaki verilerin silinmesinde güvenli yöntemler kullanılıyor mu?", yanit:"Kısmen", bulgu:"Sunucu disklerinde DoD standardı silme yapılıyor; iş bilgisayarlarında standart silme kullanılmakta.", sorumlu:"IT Güvenlik", termin:"May 2025"},
+      {soru:"Fiziksel belgelerin imhasında güvenli kağıt imha makinesi kullanılıyor mu?", yanit:"Evet", bulgu:"Mikro kesme kapasiteli evrak imha makineleri mevcut; DIN 66399 seviye P-5.", sorumlu:"Operasyon Müdürü", termin:"—"},
+      {soru:"İmha işlemleri kayıt altına alınıyor mu?", yanit:"Hayır", bulgu:"BULGU: İmha tutanağı tutulmuyor; hangi verilerin imha edildiği belgelenmiyor.", sorumlu:"KVKK Sorumlusu", termin:"Haz 2025"},
+      {soru:"Periyodik imha takvimi oluşturulmuş ve uygulanıyor mu?", yanit:"Hayır", bulgu:"BULGU: Periyodik imha takvimi bulunmuyor; imhalar reaktif ve düzensiz gerçekleşiyor.", sorumlu:"KVKK Sorumlusu", termin:"Haz 2025"},
+      {soru:"Yedekleme sistemlerindeki kişisel veriler de imha sürecine dahil mi?", yanit:"Hayır", bulgu:"BULGU: Ana sistemde silinen veriler yedekte kalmaya devam ediyor; yedek imha prosedürü yok.", sorumlu:"IT Altyapı", termin:"Tem 2025"},
+      {soru:"Bulut ortamındaki verilerin imhası tedarikçiyle sözleşmeyle güvence altına alınmış mı?", yanit:"Kısmen", bulgu:"AWS ile sözleşmede veri silme maddesi var; SaaS tedarikçilerinde bu güvence eksik.", sorumlu:"Hukuk Müdürü", termin:"Haz 2025"},
+      {soru:"Kişisel veri envanteri eksiksiz ve güncel mi?", yanit:"Kısmen", bulgu:"Envanter mevcut ancak son 8 aydır güncellenmemiş; yeni sistemler dahil edilmemiş.", sorumlu:"KVKK Sorumlusu", termin:"May 2025"},
+      {soru:"Envanterde veri kategorisi, amaç, saklama süresi, aktarılan taraflar belirtilmiş mi?", yanit:"Kısmen", bulgu:"Kategori ve amaç sütunları dolu; saklama süresi ve aktarılan taraf sütunları büyük oranda boş.", sorumlu:"KVKK Sorumlusu", termin:"May 2025"},
+      {soru:"Saklama politikası değişikliklerinde personel bilgilendiriliyor mu?", yanit:"Hayır", bulgu:"BULGU: Politika değişikliği bildirim mekanizması tanımlı değil.", sorumlu:"İK Müdürü", termin:"Haz 2025"},
+      {soru:"İmha prosedürünün etkinliği periyodik olarak denetleniyor mu?", yanit:"Hayır", bulgu:"BULGU: İmha prosedürünün denetimi hiç gerçekleştirilmemiş.", sorumlu:"KVKK Sorumlusu", termin:"Tem 2025"},
+    ]
+  },
+  {
+    kategori: "7. Üçüncü Taraf ve Yurt Dışı Aktarım",
+    kaynak: "Yurt Dışı Aktarım Rehberi",
+    sorular: [
+      {soru:"Kişisel veri paylaşılan tüm tedarikçiler tespit edilmiş mi?", yanit:"Kısmen", bulgu:"Ana tedarikçiler listede; ancak departmanların kendi inisiyatifleriyle kullandığı SaaS araçlar tespit edilmemiş.", sorumlu:"KVKK Sorumlusu", termin:"May 2025"},
+      {soru:"Her tedarikçiyle veri işleme sözleşmesi (DPA) imzalanmış mı?", yanit:"Kısmen", bulgu:"Ana yazılım tedarikçileriyle DPA mevcut; 7 küçük tedarikçiyle henüz imzalanmamış.", sorumlu:"Hukuk Müdürü", termin:"May 2025"},
+      {soru:"Tedarikçilerin KVKK uyumluluk düzeyi değerlendiriliyor mu?", yanit:"Hayır", bulgu:"BULGU: Tedarikçi uyumluluk değerlendirme formu yok; yeni tedarikçiler KVKK kontrolü yapılmadan onaylanıyor.", sorumlu:"Satın Alma Müdürü", termin:"Haz 2025"},
+      {soru:"Tedarikçi sözleşmeleri veri güvenliği yükümlülüklerini içeriyor mu?", yanit:"Kısmen", bulgu:"Standart sözleşme şablonuna güvenlik maddesi eklenmiş; eski sözleşmeler güncellenmemiş.", sorumlu:"Hukuk Müdürü", termin:"Haz 2025"},
+      {soru:"Tedarikçilerde veri ihlali yaşandığında bildirim yükümlülüğü sözleşmeyle düzenlenmiş mi?", yanit:"Kısmen", bulgu:"Yeni DPA şablonunda 24 saat bildirim maddesi mevcut; eski sözleşmelerde bu madde yok.", sorumlu:"Hukuk Müdürü", termin:"Haz 2025"},
+      {soru:"Tedarikçilerin alt yüklenici kullanımı kontrol altında mı?", yanit:"Hayır", bulgu:"BULGU: Tedarikçilerin alt yüklenici bildirimi zorunluluğu sözleşmelerde yer almıyor.", sorumlu:"Hukuk Müdürü", termin:"Haz 2025"},
+      {soru:"Yurt dışına veri aktarımı gerçekleştiriliyor mu?", yanit:"Evet", bulgu:"AWS (İrlanda) ve Salesforce (ABD) üzerinden yurt dışı aktarım gerçekleşiyor.", sorumlu:"IT Müdürü", termin:"—"},
+      {soru:"Yurt dışı aktarımlarda KVK Kurulu'nun belirlediği güvencelerden biri sağlanıyor mu?", yanit:"Kısmen", bulgu:"AWS için standart sözleşme hükümleri kullanılıyor; Salesforce için güvence mekanizması netleştirilmeli.", sorumlu:"Hukuk Müdürü", termin:"May 2025"},
+      {soru:"Yeterli koruma seviyesine sahip ülke listesi takip ediliyor mu?", yanit:"Hayır", bulgu:"BULGU: KVK Kurulu'nun ülke listesi düzenli takip edilmiyor; aktarım kararları güncellenmeyebilir.", sorumlu:"Hukuk Müdürü", termin:"Haz 2025"},
+      {soru:"Standart sözleşme hükümleri kullanılıyorsa KVK Kurulu'na bildirim yapılmış mı?", yanit:"Evet", bulgu:"AWS aktarımı için standart sözleşme bildirimi Mart 2025'te yapılmış.", sorumlu:"Hukuk Müdürü", termin:"—"},
+      {soru:"Bağlayıcı şirket kuralları (BCR) uygulanıyorsa Kurul onayı alınmış mı?", yanit:"Uygulanamaz", bulgu:"BCR kullanılmıyor; standart sözleşme hükümleri tercih ediliyor.", sorumlu:"—", termin:"—"},
+      {soru:"Bulut hizmetlerinde sunucuların fiziksel konumu belirlenmiş mi?", yanit:"Evet", bulgu:"AWS eu-west-1 (İrlanda) olarak yapılandırılmış; bölge kısıtlaması uygulanıyor.", sorumlu:"IT Altyapı", termin:"—"},
+      {soru:"Yurt dışı aktarım kayıtları düzenli tutulup raporlanıyor mu?", yanit:"Kısmen", bulgu:"AWS aktarımı kayıtlı; diğer SaaS aktarımları kayıt altına alınmamış.", sorumlu:"KVKK Sorumlusu", termin:"Haz 2025"},
+      {soru:"Tedarikçi ilişkileri periyodik olarak gözden geçirilip değerlendiriliyor mu?", yanit:"Hayır", bulgu:"BULGU: Yıllık tedarikçi değerlendirme süreci KVKK perspektifini içermiyor.", sorumlu:"Satın Alma Müdürü", termin:"Haz 2025"},
+      {soru:"Hizmet alımı sonlandığında tedarikçideki verilerin silinmesi sağlanıyor mu?", yanit:"Kısmen", bulgu:"Sözleşme feshi maddesinde silme talebi yer alıyor; ancak silme onayı/kanıtı alınmıyor.", sorumlu:"Hukuk Müdürü", termin:"Haz 2025"},
+    ]
+  },
+  {
+    kategori: "8. İhlal Yönetimi ve İlgili Kişi Hakları",
+    kaynak: "İhlal Bildirim Kılavuzu",
+    sorular: [
+      {soru:"Kişisel veri ihlalini tespit etme mekanizmaları kurulu mu?", yanit:"Evet", bulgu:"SIEM alarmları ve çalışan ihbar hattı ihlal tespiti için aktif.", sorumlu:"IT Güvenlik", termin:"—"},
+      {soru:"Veri ihlali durumunda 72 saat içinde KVK Kurulu'na bildirim prosedürü tanımlı mı?", yanit:"Evet", bulgu:"İhlal Müdahale Planı'nda 72 saat bildirim süreci adım adım tanımlı.", sorumlu:"KVKK Sorumlusu", termin:"—"},
+      {soru:"İlgili kişilere ihlal bildirimi yapılmasına ilişkin kriterler belirlenmiş mi?", yanit:"Evet", bulgu:"Yüksek riskli ihlallerde ilgili kişilere bildirim kriterleri yazılı olarak mevcut.", sorumlu:"KVKK Sorumlusu", termin:"—"},
+      {soru:"Veri ihlali kayıt defteri tutuluyor mu?", yanit:"Evet", bulgu:"İhlal kayıt defteri elektronik ortamda tutuluyor; her olay tarih, kapsam ve sonuçlarıyla kayıt altında.", sorumlu:"KVKK Sorumlusu", termin:"—"},
+      {soru:"İhlal sonrası kök neden analizi yapılıyor mu?", yanit:"Kısmen", bulgu:"Büyük olaylar için kök neden analizi yapılıyor; küçük olaylar kayıt altına alınıyor ama analiz edilmiyor.", sorumlu:"IT Güvenlik", termin:"May 2025"},
+      {soru:"İhlal müdahale ekibi ve sorumlulukları belirlenmiş mi?", yanit:"Evet", bulgu:"CISO, KVKK Sorumlusu, Hukuk ve IT temsilcilerinden oluşan müdahale ekibi tanımlı.", sorumlu:"CISO", termin:"—"},
+      {soru:"İhlal simülasyonları (masa başı tatbikatları) gerçekleştiriliyor mu?", yanit:"Kısmen", bulgu:"Son tatbikat 18 ay önce yapılmış; yıllık tatbikat programı oluşturulmalı.", sorumlu:"IT Güvenlik", termin:"Haz 2025"},
+      {soru:"İlgili kişilerin erişim hakkı başvurularını karşılayacak süreç tanımlanmış mı?", yanit:"Evet", bulgu:"Web sitesinde başvuru formu mevcut; KVKK Sorumlusu gelen talepleri takip ediyor.", sorumlu:"KVKK Sorumlusu", termin:"—"},
+      {soru:"Düzeltme hakkı başvuruları 30 gün içinde yanıtlanıyor mu?", yanit:"Evet", bulgu:"Son 12 ayda gelen 23 başvurunun tamamı ortalama 12 günde yanıtlanmış.", sorumlu:"KVKK Sorumlusu", termin:"—"},
+      {soru:"Silme/unutulma hakkı talepleri değerlendirme sürecine tabi mi?", yanit:"Evet", bulgu:"Her talep yasal saklama yükümlülüğü kontrolüyle değerlendiriliyor.", sorumlu:"KVKK Sorumlusu", termin:"—"},
+      {soru:"İtiraz hakkı başvuruları için açık bir kanal var mı?", yanit:"Evet", bulgu:"E-posta ve web formu üzerinden itiraz başvurusu yapılabiliyor.", sorumlu:"KVKK Sorumlusu", termin:"—"},
+      {soru:"Veri taşınabilirliği talepleri karşılanabiliyor mu?", yanit:"Kısmen", bulgu:"CRM verisini JSON formatında dışa aktarabiliyoruz; e-posta tercih verisi için bu imkân henüz yok.", sorumlu:"IT Müdürü", termin:"Haz 2025"},
+      {soru:"İlgili kişi başvuruları yazılı prosedüre bağlanmış mı?", yanit:"Evet", bulgu:"İlgili Kişi Başvuru Yönetim Prosedürü (v1.2) onaylı ve yürürlükte.", sorumlu:"KVKK Sorumlusu", termin:"—"},
+      {soru:"Başvuru yanıt süreleri takip edilip raporlanıyor mu?", yanit:"Evet", bulgu:"Aylık dashboard ile yanıt süreleri ve başvuru tipleri üst yönetime raporlanıyor.", sorumlu:"KVKK Sorumlusu", termin:"—"},
+      {soru:"KVKK uyumluluğu bağımsız olarak denetleniyor mu?", yanit:"Kısmen", bulgu:"İç denetim birimi yılda bir inceleme yapıyor; bağımsız dış denetim hiç gerçekleştirilmemiş.", sorumlu:"İç Denetim", termin:"Tem 2025"},
+    ]
+  }
+];
+
+let aktifFiltre = 'hepsi';
+
+function sayilariHesapla() {
+  let evet=0, kismen=0, hayir=0, na=0;
+  veri.forEach(k => k.sorular.forEach(s => {
+    if(s.yanit==='Evet') evet++;
+    else if(s.yanit==='Kısmen') kismen++;
+    else if(s.yanit==='Hayır') hayir++;
+    else if(s.yanit==='Uygulanamaz') na++;
+  }));
+  return {evet, kismen, hayir, na};
+}
+
+function guncelleSkor() {
+  const {evet, kismen, hayir, na} = sayilariHesapla();
+  const toplam = 139;
+  const skor = Math.round(((evet + kismen*0.5)/toplam)*100);
+  document.getElementById('c-evet').textContent = evet+' uyumlu';
+  document.getElementById('c-kismen').textContent = kismen+' kısmen';
+  document.getElementById('c-hayir').textContent = hayir+' uyumsuz';
+  document.getElementById('c-na').textContent = na+' uygulanamaz';
+  document.getElementById('skor-sayi').textContent = '%'+skor;
+  const fill = document.getElementById('prog-fill');
+  fill.style.width = skor+'%';
+  let renk, seviye;
+  if(skor>=80){renk='var(--green)';seviye='İyi düzeyde uyumlu'}
+  else if(skor>=60){renk='var(--amber)';seviye='Kısmen uyumlu — gelişim gerekiyor'}
+  else{renk='var(--red)';seviye='Yetersiz — öncelikli aksiyon gerekiyor'}
+  fill.style.background=renk;
+  document.getElementById('skor-sayi').style.color=renk;
+  document.getElementById('skor-seviye').textContent=seviye;
+  document.getElementById('skor-seviye').style.color=renk;
+}
+
+function filtrele(filtre, btn) {
+  aktifFiltre = filtre;
+  document.querySelectorAll('.fbtn').forEach(b=>b.classList.remove('aktif'));
+  btn.classList.add('aktif');
+  document.querySelectorAll('tr[data-yanit]').forEach(tr => {
+    tr.style.display = (filtre==='hepsi'||tr.dataset.yanit===filtre) ? '' : 'none';
+  });
+  document.querySelectorAll('.kategori').forEach(div => {
+    const gorunenler = div.querySelectorAll('tr[data-yanit]:not([style*="none"])');
+    div.style.display = (filtre==='hepsi'||gorunenler.length>0) ? '' : 'none';
+  });
+}
+
+function render() {
+  const main = document.getElementById('main');
+  let globalNo = 1;
+
+  veri.forEach((kat, ki) => {
+    const div = document.createElement('div');
+    div.className = 'kategori';
+
+    const evet = kat.sorular.filter(s=>s.yanit==='Evet').length;
+    const kismen = kat.sorular.filter(s=>s.yanit==='Kısmen').length;
+    const hayir = kat.sorular.filter(s=>s.yanit==='Hayır').length;
+    const pct = Math.round(((evet+kismen*0.5)/kat.sorular.length)*100);
+
+    div.innerHTML = `
+      <div class="kat-header">
+        <span class="kat-no">0${ki+1}</span>
+        <span class="kat-baslik">${kat.kategori}</span>
+        <span class="kat-kaynak">${kat.kaynak}</span>
+        <span class="kat-skor">%${pct} uyum</span>
+      </div>
+      <div class="tablo-wrap">
+        <table>
+          <colgroup>
+            <col><col><col><col><col><col><col>
+          </colgroup>
+          <thead>
+            <tr>
+              <th>No</th><th>Kontrol Sorusu</th><th>Yanıt</th>
+              <th>Evet: Kanıt / Kısmen: Ne yapılmış + Eksik / Hayır: Bulgu</th>
+              <th>Aksiyon</th><th>Sorumlu</th><th>Termin</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-${ki}"></tbody>
+        </table>
+      </div>
+    `;
+    main.appendChild(div);
+
+    const tbody = document.getElementById(`tbody-${ki}`);
+    kat.sorular.forEach(s => {
+      const tr = document.createElement('tr');
+      const cls = s.yanit==='Evet'?'row-evet':s.yanit==='Kısmen'?'row-kismen':s.yanit==='Hayır'?'row-hayir':'row-uygulanamaz';
+      const pillCls = s.yanit==='Evet'?'p-evet':s.yanit==='Kısmen'?'p-kismen':s.yanit==='Hayır'?'p-hayir':'p-na';
+      const bulgeCls = s.yanit==='Evet'?'evet':s.yanit==='Kısmen'?'kismen':s.yanit==='Hayır'?'hayir':'';
+      tr.className = cls;
+      tr.dataset.yanit = s.yanit;
+      tr.innerHTML = `
+        <td class="no-cell">${String(globalNo++).padStart(3,'0')}</td>
+        <td>${s.soru}</td>
+        <td style="text-align:center"><span class="pill ${pillCls}">${s.yanit}</span></td>
+        <td class="bulgu-cell ${bulgeCls}">${s.bulgu}</td>
+        <td class="bulgu-cell">${s.yanit!=='Evet'&&s.yanit!=='Uygulanamaz'?'Aksiyon planına alındı.':''}</td>
+        <td class="sorumlu">${s.sorumlu}</td>
+        <td class="termin">${s.termin}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  });
+
+  guncelleSkor();
+}
+
+render();
+</script>
+</body>
+</html>
