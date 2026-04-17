@@ -344,7 +344,7 @@ function guncelleSkor() {
   fill.style.width = skor+'%';
   let renk, seviye;
   if(skor>=80){renk='var(--green)';seviye='İyi düzeyde uyumlu'}
-  else if(skor>=60){renk='var(--amber)';seviye='Kısmen uyumlu — gelişim gerekiyor'}
+  else if(skor>=60){renk='#3f2b68';seviye='Kısmen uyumlu — gelişim gerekiyor'}
   else{renk='var(--red)';seviye='Yetersiz — öncelikli aksiyon gerekiyor'}
   fill.style.background=renk;
   document.getElementById('skor-sayi').style.color=renk;
